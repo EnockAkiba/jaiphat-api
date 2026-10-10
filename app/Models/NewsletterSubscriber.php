@@ -8,6 +8,6 @@ class NewsletterSubscriber extends Model
 {
     protected $fillable = [
         'email',
-        'status',
+        'locale',
     ];
 }

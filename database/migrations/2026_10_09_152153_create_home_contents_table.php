@@ -26,14 +26,14 @@ return new class extends Migration
 
         Schema::create('home_setting_translations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('home_setting_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('home_content_id')->constrained()->cascadeOnDelete();
             $table->string('locale', 2);
             $table->string('hero_kicker');
             $table->string('hero_title');
             $table->string('hero_script');
             $table->text('hero_text');
             $table->string('band_title');
-            $table->unique(['home_setting_id', 'locale']);
+            $table->unique(['home_content_id', 'locale']);
         });
 
         Schema::create('home_services', function (Blueprint $table) {
