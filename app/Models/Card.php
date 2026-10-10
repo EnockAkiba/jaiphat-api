@@ -7,12 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Card extends Model
 {
     protected $fillable = [
-        'name',
-        'email',
-        'phone',
-        'date',
-        'time',
-        'service',
-        'message',
+        'user_id',
+        'session_id',
     ];
 }

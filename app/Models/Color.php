@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Color extends Model
 {
     protected $fillable = [
-        'name',
-        'hex',
-        'status',
+        'slug',
+        'swatch',
+        'image',
+        'sort_order',
     ];
 }

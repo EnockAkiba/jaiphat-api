@@ -8,12 +8,9 @@ class Bride extends Model
 {
     protected $fillable = [
         'name',
-        'email',
-        'phone',
-        'date',
-        'time',
-        'service',
-        'message',
+        'gown_name',
+        'product_id',
+        'image',
+        'sort_order',
     ];
-    
 }

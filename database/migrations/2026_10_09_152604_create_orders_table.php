@@ -18,18 +18,18 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('wishlist_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('wishlist_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->timestamps();
-            $table->unique(['wishlist_id', 'product_id']);
-        });
+        // Schema::create('wishlist_items', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->foreignId('wishlist_id')->constrained()->cascadeOnDelete();
+        //     $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+        //     $table->timestamps();
+        //     $table->unique(['wishlist_id', 'product_id']);
+        // });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('wishlist_items');
+        // Schema::dropIfExists('wishlist_items');
         Schema::dropIfExists('wishlists');
     }
 };

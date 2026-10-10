@@ -7,9 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Page extends Model
 {
     protected $fillable = [
-        'title',
+        'image',
         'slug',
-        'content',
-        'status',
+        'secondary_image',
     ];
 }
