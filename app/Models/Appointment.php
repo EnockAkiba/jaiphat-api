@@ -14,6 +14,7 @@ class Appointment extends Model
         'phone',
         'date',
         'time',
+        'party',
         'notes',
         'status',
     ];
