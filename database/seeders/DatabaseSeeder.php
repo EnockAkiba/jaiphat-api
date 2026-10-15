@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         );
 
         $this->call([
+            AdminSeeder::class,
             CatalogSeeder::class,
             ShowcaseSeeder::class, // après le catalogue : les mariées pointent vers des produits
         ]);

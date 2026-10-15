@@ -20,6 +20,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Api\V1\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\V1\Admin\ColorController as AdminColorController;
+use App\Http\Controllers\Api\V1\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Api\V1\Admin\UploadController as AdminUploadController;
 use App\Http\Middleware\EnsureAdmin;
 
 Route::get('/user', function (Request $request) {
@@ -92,6 +96,14 @@ Route::prefix('v1')->group(function (): void {
             Route::get('dashboard', DashboardController::class);
             Route::get('settings', [AdminSettingController::class, 'show']);
             Route::put('settings', [AdminSettingController::class, 'update']);
+
+            // Catalogue
+            Route::apiResource('categories', AdminCategoryController::class)->except('show')->whereNumber('category');
+            Route::apiResource('colors', AdminColorController::class)->except('show')->whereNumber('color');
+            Route::apiResource('products', AdminProductController::class)->except('show')->whereNumber('product');
+
+            // Envoi de photos (multipart/form-data, champ "file")
+            Route::post('uploads', AdminUploadController::class)->middleware('throttle:60,1');
         });
     });
 });
