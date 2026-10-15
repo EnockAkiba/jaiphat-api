@@ -17,6 +17,11 @@ use App\Http\Middleware\IdentifyShopper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Api\V1\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Api\V1\Admin\DashboardController;
+use App\Http\Controllers\Api\V1\Admin\SettingController as AdminSettingController;
+use App\Http\Middleware\EnsureAdmin;
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -77,5 +82,16 @@ Route::prefix('v1')->group(function (): void {
         Route::post('orders', [OrderController::class, 'store'])->middleware('throttle:10,1');
         Route::get('orders/{number}', [OrderController::class, 'show']);
         Route::post('orders/{number}/cancel', [OrderController::class, 'cancel']);
+    });
+    Route::prefix('admin')->group(function (): void {
+        Route::post('login', [AdminAuthController::class, 'login'])->middleware('throttle:10,1');
+
+        Route::middleware(['auth:sanctum', EnsureAdmin::class])->group(function (): void {
+            Route::post('logout', [AdminAuthController::class, 'logout']);
+            Route::get('me', [AdminAuthController::class, 'me']);
+            Route::get('dashboard', DashboardController::class);
+            Route::get('settings', [AdminSettingController::class, 'show']);
+            Route::put('settings', [AdminSettingController::class, 'update']);
+        });
     });
 });
