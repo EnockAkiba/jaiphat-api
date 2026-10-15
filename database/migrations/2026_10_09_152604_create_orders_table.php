@@ -6,30 +6,50 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->string('session_id')->nullable()->index();
+            $table->string('number')->unique();                       // numéro public : JP-261015-K3M9Q
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('session_id')->nullable()->index();        // jeton invité (même nom que carts/wishlists)
+
+            $table->string('customer_name');
+            $table->string('customer_email');
+            $table->string('customer_phone', 30);
+
+            $table->string('address');
+            $table->string('city', 100);
+            $table->string('district', 100)->nullable();
+            $table->decimal('latitude', 10, 7)->nullable();           // aide à estimer la distance
+            $table->decimal('longitude', 10, 7)->nullable();
+            $table->text('notes')->nullable();
+
+            $table->unsignedBigInteger('subtotal_cents');
+            $table->unsignedBigInteger('shipping_cents')->nullable(); // null = frais à confirmer
+            $table->unsignedBigInteger('total_cents')->nullable();    // null tant que la livraison n'est pas chiffrée
+
+            $table->string('status', 20)->default('pending')->index();
+            $table->string('payment_status', 20)->default('unpaid');
             $table->timestamps();
         });
 
-        // Schema::create('wishlist_items', function (Blueprint $table) {
-        //     $table->id();
-        //     $table->foreignId('wishlist_id')->constrained()->cascadeOnDelete();
-        //     $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-        //     $table->timestamps();
-        //     $table->unique(['wishlist_id', 'product_id']);
-        // });
+        Schema::create('order_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('order_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
+            // Instantané : le nom et le prix au moment de l'achat ne changent jamais, même si le produit est modifié.
+            $table->string('product_name');
+            $table->string('size', 20);
+            $table->unsignedBigInteger('unit_price_cents');
+            $table->unsignedInteger('quantity');
+            $table->unsignedBigInteger('line_total_cents');
+        });
     }
 
     public function down(): void
     {
-        // Schema::dropIfExists('wishlist_items');
-        Schema::dropIfExists('wishlists');
+        Schema::dropIfExists('order_items');
+        Schema::dropIfExists('orders');
     }
 };

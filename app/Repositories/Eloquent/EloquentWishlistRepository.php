@@ -22,6 +22,11 @@ final class EloquentWishlistRepository implements WishlistRepositoryInterface
             ->first();
     }
 
+    public function findBareFor(Shopper $shopper): ?Wishlist
+    {
+        return Wishlist::query()->where($shopper->ownerColumns())->first();
+    }
+
     public function firstOrCreateFor(Shopper $shopper): Wishlist
     {
         return Wishlist::query()->firstOrCreate($shopper->ownerColumns());
@@ -40,5 +45,16 @@ final class EloquentWishlistRepository implements WishlistRepositoryInterface
     public function removeProduct(Wishlist $wishlist, int $productId): void
     {
         $wishlist->products()->detach($productId);
+    }
+
+    public function productIds(Wishlist $wishlist): array
+    {
+        return $wishlist->products()->pluck('products.id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    public function delete(Wishlist $wishlist): void
+    {
+        $wishlist->products()->detach();
+        $wishlist->delete();
     }
 }

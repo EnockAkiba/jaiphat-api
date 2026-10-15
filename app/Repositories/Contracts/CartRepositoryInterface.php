@@ -13,6 +13,9 @@ interface CartRepositoryInterface
     /** Panier du client avec toutes les relations pour l'affichage, ou null s'il n'en a pas encore. */
     public function findFor(Shopper $shopper): ?Cart;
 
+    /** Panier du client avec seulement ses lignes (sans produits) : pour les opérations internes (fusion). */
+    public function findWithItems(Shopper $shopper): ?Cart;
+
     public function firstOrCreateFor(Shopper $shopper): Cart;
 
     /** Un panier vide, non enregistré (pour répondre à GET /cart sans créer de ligne en base). */
@@ -30,4 +33,7 @@ interface CartRepositoryInterface
     public function deleteItem(CartItem $item): void;
 
     public function clear(Cart $cart): void;
+
+    /** Supprime le panier ET ses lignes. */
+    public function delete(Cart $cart): void;
 }

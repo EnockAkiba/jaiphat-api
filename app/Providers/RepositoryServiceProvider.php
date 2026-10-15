@@ -7,11 +7,13 @@ namespace App\Providers;
 use App\Repositories\Contracts\CartRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\ColorRepositoryInterface;
+use App\Repositories\Contracts\ContentRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\WishlistRepositoryInterface;
 use App\Repositories\Eloquent\EloquentCartRepository;
 use App\Repositories\Eloquent\EloquentCategoryRepository;
 use App\Repositories\Eloquent\EloquentColorRepository;
+use App\Repositories\Eloquent\EloquentContentRepository;
 use App\Repositories\Eloquent\EloquentProductRepository;
 use App\Repositories\Eloquent\EloquentWishlistRepository;
 use Illuminate\Support\ServiceProvider;
@@ -30,5 +32,7 @@ class RepositoryServiceProvider extends ServiceProvider
         // Panier & wishlist
         CartRepositoryInterface::class => EloquentCartRepository::class,
         WishlistRepositoryInterface::class => EloquentWishlistRepository::class,
+        // Vitrine
+        ContentRepositoryInterface::class => EloquentContentRepository::class,
     ];
 }
