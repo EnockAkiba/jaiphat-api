@@ -10,11 +10,15 @@ use Illuminate\Http\UploadedFile;
 final class UploadService
 {
     /** @return array{path: string, url: string} */
+
+      public function __construct(private readonly ImageOptimizer $optimizer) {}
+
+    /** @return array{path: string, url: string} */
     public function storeImage(UploadedFile $file): array
     {
-        // store() génère un nom aléatoire : jamais le nom envoyé par l'utilisateur.
-        $path = $file->store('uploads', 'public');
+        $path = $this->optimizer->store($file);
 
         return ['path' => $path, 'url' => (string) MediaUrl::from($path)];
     }
+
 }

@@ -26,6 +26,16 @@ use App\Http\Controllers\Api\V1\Admin\ProductController as AdminProductControlle
 use App\Http\Controllers\Api\V1\Admin\UploadController as AdminUploadController;
 use App\Http\Middleware\EnsureAdmin;
 
+use App\Http\Controllers\Api\V1\Admin\BrideController as AdminBrideController;
+use App\Http\Controllers\Api\V1\Admin\HomeController as AdminHomeController;
+use App\Http\Controllers\Api\V1\Admin\PageController as AdminPageController;
+use App\Http\Controllers\Api\V1\Admin\TestimonialController as AdminTestimonialController;
+
+use App\Http\Controllers\Api\V1\Admin\AppointmentController as AdminAppointmentController;
+use App\Http\Controllers\Api\V1\Admin\ContactController as AdminContactController;
+use App\Http\Controllers\Api\V1\Admin\NewsletterController as AdminNewsletterController;
+use App\Http\Controllers\Api\V1\Admin\OrderController as AdminOrderController;
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -102,6 +112,23 @@ Route::prefix('v1')->group(function (): void {
             Route::apiResource('colors', AdminColorController::class)->except('show')->whereNumber('color');
             Route::apiResource('products', AdminProductController::class)->except('show')->whereNumber('product');
 
+            // Contenu du site
+            Route::get('home', [AdminHomeController::class, 'show']);
+            Route::put('home', [AdminHomeController::class, 'update']);
+            Route::get('pages/{slug}', [AdminPageController::class, 'show'])->where('slug', '[a-z0-9-]+');
+            Route::put('pages/{slug}', [AdminPageController::class, 'update'])->where('slug', '[a-z0-9-]+');
+            Route::apiResource('brides', AdminBrideController::class)->except('show')->whereNumber('bride');
+            Route::apiResource('testimonials', AdminTestimonialController::class)->except('show')->whereNumber('testimonial');
+
+            // Réception : commandes, rendez-vous, messages, newsletter
+            Route::get('orders', [AdminOrderController::class, 'index']);
+            Route::patch('orders/{number}', [AdminOrderController::class, 'update'])->where('number', '[A-Za-z0-9-]+');
+            Route::get('appointments', [AdminAppointmentController::class, 'index']);
+            Route::patch('appointments/{id}', [AdminAppointmentController::class, 'update'])->where('id', '[A-Za-z0-9-]+');
+            Route::get('contacts', [AdminContactController::class, 'index']);
+            Route::patch('contacts/{id}', [AdminContactController::class, 'update'])->whereNumber('id');
+            Route::get('newsletter', [AdminNewsletterController::class, 'index']);
+            Route::delete('newsletter/{id}', [AdminNewsletterController::class, 'destroy'])->whereNumber('id');
             // Envoi de photos (multipart/form-data, champ "file")
             Route::post('uploads', AdminUploadController::class)->middleware('throttle:60,1');
         });

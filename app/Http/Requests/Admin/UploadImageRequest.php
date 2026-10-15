@@ -17,7 +17,7 @@ class UploadImageRequest extends FormRequest
     {
         return [
             // mimes vérifie le contenu réel du fichier, pas seulement son extension. SVG exclu (peut contenir du script).
-            'file' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:6144'],
+            'file' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:6144', 'dimensions:max_width=6000,max_height=6000'],
         ];
     }
 
