@@ -23,6 +23,11 @@ final class EloquentCartRepository implements CartRepositoryInterface
             ->first();
     }
 
+    public function findWithItems(Shopper $shopper): ?Cart
+    {
+        return Cart::query()->where($shopper->ownerColumns())->with('items')->first();
+    }
+
     public function firstOrCreateFor(Shopper $shopper): Cart
     {
         return Cart::query()->firstOrCreate($shopper->ownerColumns());
@@ -64,5 +69,11 @@ final class EloquentCartRepository implements CartRepositoryInterface
     public function clear(Cart $cart): void
     {
         $cart->items()->delete();
+    }
+
+    public function delete(Cart $cart): void
+    {
+        $cart->items()->delete();
+        $cart->delete();
     }
 }

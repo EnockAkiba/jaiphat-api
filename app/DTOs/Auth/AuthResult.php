@@ -1,0 +1,16 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\DTOs\Auth;
+
+use App\Models\User;
+
+/** Résultat d'une inscription ou d'une connexion : l'utilisateur + son jeton d'accès (en clair, affiché une seule fois). */
+final readonly class AuthResult
+{
+    public function __construct(
+        public User $user,
+        public string $token,
+    ) {}
+}

@@ -1,0 +1,424 @@
+{
+  "info": {
+    "name": "Jaiphat – Formulaires",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Rendez-vous, contact, newsletter. Aucun environnement requis. Lance les requêtes dans l'ordre."
+  },
+  "item": [
+    {
+      "name": "Préparer les données (date, créneau, email)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/appointments/availability?date=2000-01-01",
+        "description": "Calcule un lundi futur et un créneau au hasard. La date 2000 est dans le passé, donc refusée : 422 attendu."
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Prochain lundi au moins 3 jours devant nous, et un créneau au hasard (évite les conflits entre exécutions)",
+              "const d = new Date(); d.setDate(d.getDate() + 3);",
+              "while (d.getDay() !== 1) d.setDate(d.getDate() + 1);",
+              "const iso = d.getFullYear() + \"-\" + String(d.getMonth()+1).padStart(2,\"0\") + \"-\" + String(d.getDate()).padStart(2,\"0\");",
+              "const slots = [\"10:00\",\"11:00\",\"12:00\",\"13:00\",\"14:00\",\"15:00\",\"16:00\",\"17:00\"];",
+              "pm.collectionVariables.set(\"rdvDate\", iso);",
+              "pm.collectionVariables.set(\"rdvTime\", slots[Math.floor(Math.random()*slots.length)]);",
+              "pm.collectionVariables.set(\"formEmail\", \"awa+\" + Date.now() + \"@example.com\");"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 422\", () => pm.response.to.have.status(422));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Disponibilités du jour",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/appointments/availability?date={{rdvDate}}",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "",
+              "const d = pm.response.json().data;",
+              "pm.test(\"8 créneaux avec un booléen available\", () => { pm.expect(d.slots).to.have.length(8); d.slots.forEach(s => pm.expect(s.available).to.be.a(\"boolean\")); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Réserver (invité)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/appointments",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Awa Diop\",\n  \"email\": \"{{formEmail}}\",\n  \"phone\": \"+243970000000\",\n  \"date\": \"{{rdvDate}}\",\n  \"time\": \"{{rdvTime}}\",\n  \"party\": \"2 personnes\",\n  \"notes\": \"Première visite\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+              "",
+              "const d = pm.response.json().data;",
+              "pm.test(\"Statut pending et id public\", () => { pm.expect(d.status).to.eql(\"pending\"); pm.expect(d.id).to.be.a(\"string\").that.is.not.empty; });",
+              "pm.collectionVariables.set(\"rdvId\", d.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Même créneau → 422",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/appointments",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Awa Diop\",\n  \"email\": \"{{formEmail}}\",\n  \"phone\": \"+243970000000\",\n  \"date\": \"{{rdvDate}}\",\n  \"time\": \"{{rdvTime}}\",\n  \"party\": \"2 personnes\",\n  \"notes\": \"Première visite\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 422\", () => pm.response.to.have.status(422));",
+              "",
+              "pm.test(\"Erreur sur le champ time\", () => pm.expect(pm.response.json().errors).to.have.property(\"time\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Le créneau apparaît pris",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/appointments/availability?date={{rdvDate}}",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "",
+              "const t = pm.collectionVariables.get(\"rdvTime\");",
+              "pm.test(\"Le créneau réservé n'est plus disponible\", () => pm.expect(pm.response.json().data.slots.find(s => s.time === t).available).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dimanche → 422",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/appointments",
+        "description": "Le 6 janvier 2030 est un dimanche, mais cette date est aussi trop lointaine : l'erreur sur 'date' est attendue dans les deux cas.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Awa Diop\",\n  \"email\": \"{{formEmail}}\",\n  \"phone\": \"+243970000000\",\n  \"date\": \"2030-01-06\",\n  \"time\": \"{{rdvTime}}\",\n  \"party\": \"2 personnes\",\n  \"notes\": \"Première visite\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 422\", () => pm.response.to.have.status(422));",
+              "",
+              "pm.test(\"Erreur sur date\", () => pm.expect(pm.response.json().errors).to.have.property(\"date\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mes rendez-vous sans connexion → 401",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/appointments",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 401\", () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contact : message valide",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/contact",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Awa Diop\",\n  \"email\": \"{{formEmail}}\",\n  \"message\": \"Bonjour, je souhaite des informations sur vos robes.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contact : champs invalides → 422",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/contact",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"\",\n  \"email\": \"nope\",\n  \"message\": \"court\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 422\", () => pm.response.to.have.status(422));",
+              "",
+              "pm.test(\"3 erreurs\", () => pm.expect(Object.keys(pm.response.json().errors)).to.include.members([\"name\",\"email\",\"message\"]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Newsletter : première inscription",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/newsletter",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{formEmail}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Newsletter : déjà inscrit (200, pas de doublon)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/newsletter",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{formEmail}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000/api/v1"
+    }
+  ]
+}

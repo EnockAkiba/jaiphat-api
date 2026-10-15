@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Règles métier du panier. Chaque méthode publique renvoie le panier À JOUR :
+ * Règles métier du panier. Chaque méthode publique d'action renvoie le panier À JOUR :
  * le frontend n'a pas besoin de refaire un GET /cart après chaque action.
  */
 final class CartService
@@ -68,6 +68,34 @@ final class CartService
         }
 
         return $this->show($shopper);
+    }
+
+    /**
+     * Fusionne le panier d'un invité dans celui d'un utilisateur (appelé à la connexion / inscription).
+     * Les quantités d'une même ligne (produit + taille) s'additionnent, plafonnées à MAX_QUANTITY_PER_LINE :
+     * on ne renvoie pas d'erreur à quelqu'un qui vient simplement de se connecter.
+     * Le panier invité est ensuite supprimé.
+     */
+    public function mergeGuestCart(string $guestToken, int $userId): void
+    {
+        $guestCart = $this->carts->findWithItems(new Shopper(guestToken: $guestToken));
+
+        if ($guestCart === null) {
+            return;
+        }
+
+        DB::transaction(function () use ($guestCart, $userId): void {
+            $userCart = $this->carts->firstOrCreateFor(new Shopper(userId: $userId));
+
+            foreach ($guestCart->items as $line) {
+                $existing = $this->carts->findLine($userCart, $line->product_id, $line->size);
+                $quantity = min(($existing?->qty ?? 0) + $line->qty, self::MAX_QUANTITY_PER_LINE);
+
+                $this->carts->saveLine($userCart, $line->product_id, $line->size, $quantity);
+            }
+
+            $this->carts->delete($guestCart);
+        });
     }
 
     /**

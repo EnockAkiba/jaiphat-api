@@ -1,0 +1,430 @@
+{
+  "info": {
+    "name": "Jaiphat – Commandes",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Commande invité de bout en bout. Les frais de livraison se fixent côté serveur : php artisan orders:quote JP-XXXXXX-XXXXX 12.50"
+  },
+  "item": [
+    {
+      "name": "Préparer : deux invités et un produit",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/products?per_page=1",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"guestToken\", pm.variables.replaceIn(\"{{$guid}}\"));",
+              "pm.collectionVariables.set(\"guestToken2\", pm.variables.replaceIn(\"{{$guid}}\"));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "",
+              "const p = pm.response.json().data[0];",
+              "pm.collectionVariables.set(\"productId\", p.id);",
+              "pm.collectionVariables.set(\"productSlug\", p.slug);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Taille du produit",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/products/{{productSlug}}",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "",
+              "pm.collectionVariables.set(\"size\", pm.response.json().data.sizes[0]);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Commander avec un panier vide → 422",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Guest-Token",
+            "value": "{{guestToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/orders",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_name\": \"Awa Diop\",\n  \"customer_email\": \"awa@example.com\",\n  \"customer_phone\": \"+243970000000\",\n  \"address\": \"12 avenue de la Paix\",\n  \"city\": \"Kinshasa\",\n  \"district\": \"Gombe\",\n  \"notes\": \"Sonner deux fois\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 422\", () => pm.response.to.have.status(422));",
+              "",
+              "pm.test(\"Erreur sur cart\", () => pm.expect(pm.response.json().errors).to.have.property(\"cart\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ajouter 2 exemplaires au panier",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Guest-Token",
+            "value": "{{guestToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/cart/items",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"product_id\": \"{{productId}}\",\n  \"size\": \"{{size}}\",\n  \"quantity\": 2\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+              "",
+              "pm.collectionVariables.set(\"cartSubtotal\", pm.response.json().data.subtotal);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Commander avec une adresse incomplète → 422",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Guest-Token",
+            "value": "{{guestToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/orders",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_name\": \"Awa Diop\",\n  \"customer_email\": \"awa@example.com\",\n  \"customer_phone\": \"+243970000000\",\n  \"address\": \"\",\n  \"city\": \"\",\n  \"district\": \"Gombe\",\n  \"notes\": \"Sonner deux fois\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 422\", () => pm.response.to.have.status(422));",
+              "",
+              "pm.test(\"Erreurs sur address et city\", () => pm.expect(Object.keys(pm.response.json().errors)).to.include.members([\"address\",\"city\"]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Passer la commande",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Guest-Token",
+            "value": "{{guestToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/orders",
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_name\": \"Awa Diop\",\n  \"customer_email\": \"awa@example.com\",\n  \"customer_phone\": \"+243970000000\",\n  \"address\": \"12 avenue de la Paix\",\n  \"city\": \"Kinshasa\",\n  \"district\": \"Gombe\",\n  \"notes\": \"Sonner deux fois\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+              "",
+              "const d = pm.response.json().data;",
+              "pm.test(\"Commande en attente, livraison à confirmer\", () => {",
+              "  pm.expect(d.status).to.eql(\"pending\");",
+              "  pm.expect(d.shipping_pending).to.eql(true);",
+              "  pm.expect(d.shipping_fee).to.eql(null);",
+              "  pm.expect(d.total).to.eql(null);",
+              "});",
+              "pm.test(\"Le sous-total est celui du panier\", () => pm.expect(d.subtotal).to.eql(pm.collectionVariables.get(\"cartSubtotal\")));",
+              "pm.test(\"Numéro au format JP-AAMMJJ-XXXXX\", () => pm.expect(d.number).to.match(/^JP-\\d{6}-[A-Z0-9]{5}$/));",
+              "pm.collectionVariables.set(\"orderNumber\", d.number);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Le panier est vidé",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Guest-Token",
+            "value": "{{guestToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/cart",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "",
+              "pm.test(\"Panier vide\", () => pm.expect(pm.response.json().data.items_count).to.eql(0));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Voir la commande",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Guest-Token",
+            "value": "{{guestToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/orders/{{orderNumber}}",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "",
+              "pm.test(\"Une ligne avec nom et prix figés\", () => { const i = pm.response.json().data.items[0]; pm.expect(i.product_name).to.be.a(\"string\"); pm.expect(i.quantity).to.eql(2); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lister mes commandes",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Guest-Token",
+            "value": "{{guestToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/orders",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "",
+              "pm.test(\"Au moins une commande\", () => pm.expect(pm.response.json().data.length).to.be.at.least(1));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Un autre invité ne la voit pas → 404",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Guest-Token",
+            "value": "{{guestToken2}}"
+          }
+        ],
+        "url": "{{baseUrl}}/orders/{{orderNumber}}",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Annuler la commande (en attente)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Guest-Token",
+            "value": "{{guestToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/orders/{{orderNumber}}/cancel",
+        "description": ""
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "",
+              "pm.test(\"Annulée\", () => pm.expect(pm.response.json().data.status).to.eql(\"cancelled\"));"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000/api/v1"
+    }
+  ]
+}
